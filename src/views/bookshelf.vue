@@ -76,27 +76,40 @@ const sections = [
 .count {
     font-size: 0.9rem;
     font-weight: normal;
-    color: #666;
+    color: var(--color-text-muted);
 }
 
 .empty,
 .empty-state {
-    color: #777;
+    color: var(--color-text-muted);
     font-style: italic;
+}
+
+.empty-state {
+    padding: 1.25rem 1.5rem;
+    border: 1px dashed var(--color-border-strong);
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .book-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr));
+    gap: 1.25rem;
 }
 
 .book-card {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 0.75rem;
+    min-width: 0;
+    padding: 0.9rem;
+    border: 1px solid var(--color-border);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.025), transparent 55%), var(--color-surface);
     display: flex;
     flex-direction: column;
+    transition: border-color 180ms ease, transform 180ms ease;
+}
+
+.book-card:hover {
+    border-color: var(--color-border-strong);
+    transform: translateY(-2px);
 }
 
 .book-card img,
@@ -104,35 +117,68 @@ const sections = [
     width: 100%;
     height: 220px;
     object-fit: cover;
-    border-radius: 4px;
-    background: #f0f0f0;
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-surface-raised);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #999;
-    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
 }
 
 .book-card h3 {
-    font-size: 1rem;
-    margin: 0.5rem 0 0.25rem;
+    margin: 0.85rem 0 0.25rem;
+    font-size: 1.05rem;
+    line-height: 1.4;
 }
 
 .author {
-    font-size: 0.85rem;
-    color: #555;
-    margin: 0 0 0.5rem;
+    margin: 0 0 1rem;
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
 }
 
 .card-controls {
     margin-top: auto;
     display: flex;
-    gap: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.6rem;
     align-items: center;
 }
 
 .card-controls select {
-    flex: 1;
-    padding: 0.25rem;
+    flex: 1 1 110px;
+    min-width: 0;
+    padding: 0.55rem 0.6rem;
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
+}
+
+.card-controls button {
+    color: var(--color-error);
+}
+
+@media (max-width: 480px) {
+    .book-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .book-card {
+        padding: 0.65rem;
+    }
+
+    .book-card img,
+    .no-cover {
+        height: 190px;
+    }
+
+    .card-controls {
+        align-items: stretch;
+        flex-direction: column;
+    }
 }
 </style>

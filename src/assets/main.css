@@ -7,6 +7,46 @@
   padding: 0 0 5rem;
 }
 
+button,
+select,
+input {
+  border: 1px solid var(--color-border-strong);
+  border-radius: 2px;
+  background: var(--color-surface-raised);
+}
+
+button {
+  padding: 0.65rem 1rem;
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  background: var(--color-surface-hover);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+select,
+input {
+  padding: 0.65rem 0.75rem;
+  color: var(--color-text);
+}
+
+select:focus,
+input:focus {
+  border-color: var(--color-accent);
+}
+
 a {
   color: var(--color-accent);
   text-decoration-color: rgba(194, 166, 107, 0.45);
@@ -15,22 +55,23 @@ a {
 }
 
 a:hover {
-  color: #e0c789;
+  color: var(--color-accent-bright);
 }
 
 nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  min-height: 92px;
-  margin: 0 0 4.5rem;
+  gap: clamp(0.35rem, 2vw, 1.5rem);
+  min-height: 88px;
+  margin: 0 0 4rem;
   border-bottom: 1px solid var(--color-border);
 }
 
 nav a {
+  position: relative;
   display: inline-block;
-  padding: 0.55rem 1rem;
+  padding: 0.7rem 0.8rem;
   border: 0;
   color: var(--color-text-muted);
   font-family: var(--font-ui);
@@ -47,7 +88,17 @@ nav a.router-link-exact-active {
 }
 
 nav a.router-link-exact-active {
-  background: transparent;
+  color: var(--color-accent-bright);
+}
+
+nav a.router-link-exact-active::after {
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0;
+  left: 0.8rem;
+  height: 1px;
+  background: var(--color-accent);
+  content: '';
 }
 
 h1,
@@ -81,8 +132,13 @@ p {
   color: var(--color-text-muted);
 }
 
-p[style*='color: red'] {
-  color: var(--color-error) !important;
+.error-message {
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.7rem 1rem;
+  border-left: 2px solid var(--color-error);
+  background: var(--color-error-surface);
+  color: var(--color-error);
 }
 
 section {
@@ -116,7 +172,7 @@ article img {
   max-width: 220px !important;
   height: auto;
   border: 1px solid var(--color-border-strong);
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-card);
 }
 
 article p,
@@ -159,14 +215,14 @@ article h3 + p {
   }
 
   nav {
-    min-height: 76px;
-    margin-bottom: 3rem;
+    min-height: 72px;
+    margin-bottom: 2.75rem;
   }
 
   nav a {
-    padding: 0.5rem 0.7rem;
-    font-size: 0.65rem;
-    letter-spacing: 0.12em;
+    padding: 0.55rem 0.65rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
   }
 
   article {

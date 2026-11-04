@@ -2,7 +2,7 @@
     <h1>Find your classic book</h1>
 
     <p v-if="loading">Loading...</p>
-    <p v-if="error" style="color: red">{{ error }}</p>
+    <p v-if="error" class="error-message">{{ error }}</p>
 
     <section v-for="section in sections" :key="section.slug">
         <h2>{{ section.label }}</h2>
@@ -109,13 +109,13 @@ export default {
     object-fit: cover;
     border: 1px solid var(--color-border-strong);
     background: var(--color-surface-raised);
-    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+    box-shadow: var(--shadow-card);
     transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .card:hover img {
     border-color: var(--color-accent-soft);
-    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 18px 34px rgba(0, 0, 0, 0.42);
 }
 
 .cover-placeholder {

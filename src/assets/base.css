@@ -3,15 +3,19 @@
   --color-background: #171612;
   --color-surface: #211f19;
   --color-surface-raised: #29261f;
+  --color-surface-hover: #302b22;
   --color-border: #403a2e;
   --color-border-strong: #625741;
   --color-text: #e8dfcc;
   --color-text-muted: #aaa18e;
   --color-accent: #c2a66b;
+  --color-accent-bright: #e0c789;
   --color-accent-soft: #8f7748;
   --color-error: #d28f7b;
+  --color-error-surface: #38251f;
   --font-body: Georgia, 'Times New Roman', serif;
   --font-ui: 'Segoe UI', Arial, sans-serif;
+  --shadow-card: 0 16px 34px rgba(0, 0, 0, 0.3);
 }
 
 *,
@@ -31,7 +35,7 @@ body {
   min-height: 100vh;
   color: var(--color-text);
   background:
-    radial-gradient(ellipse at 50% -18%, rgba(194, 166, 107, 0.09), transparent 52%),
+    radial-gradient(ellipse at 50% -18%, rgba(194, 166, 107, 0.1), transparent 52%),
     var(--color-background);
   font-family: var(--font-body);
   font-size: 16px;
@@ -49,4 +53,15 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 4px;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button,
+select {
+  color: var(--color-text);
 }

@@ -7,13 +7,3 @@
 
   <RouterView />
 </template>
-
-<style>
-nav {
-  width: 100%;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-accent);
-}
-</style>
