@@ -1,22 +1,43 @@
 <template>
     <h1>Books</h1>
 
-    <div class="search-bar">
-        <input
-            v-model="searchQuery"
-            type="search"
-            placeholder="Search books or authors…"
-            @input="onSearchInput"
-        />
-        <button
-            v-if="searchQuery"
-            type="button"
-            class="clear-btn"
-            aria-label="Clear search"
-            @click="clearSearch"
+    <div class="toolbar">
+        <div class="search-bar">
+            <input
+                v-model="searchQuery"
+                type="search"
+                placeholder="Search books or authors…"
+                @input="onSearchInput"
+            />
+            <button
+                v-if="searchQuery"
+                type="button"
+                class="clear-btn"
+                aria-label="Clear search"
+                @click="clearSearch"
+            >
+                ✕
+            </button>
+        </div>
+
+        <nav
+            v-if="!loading && !error"
+            class="category-tabs"
+            aria-label="Book categories"
         >
-            ✕
-        </button>
+            <button
+                v-for="section in sections"
+                :key="section.slug"
+                type="button"
+                class="category-tab"
+                :class="{
+                    active: !searchQuery.trim() && section.slug === activeCategory
+                }"
+                @click="selectCategory(section.slug)"
+            >
+                {{ section.label }}
+            </button>
+        </nav>
     </div>
 
     <p v-if="loading">Loading...</p>
@@ -33,7 +54,7 @@
                 No results found.
             </p>
 
-            <div v-else class="row">
+            <div v-else class="grid">
                 <RouterLink
                     v-for="book in searchResults"
                     :key="book.id"
@@ -54,29 +75,30 @@
         </template>
     </template>
 
-    <!-- BROWSE MODE -->
+    <!-- BROWSE MODE (single active category) -->
     <template v-else>
-        <section v-for="section in sections" :key="section.slug">
-            <h2>{{ section.label }}</h2>
+        <p v-if="activeBooks.length === 0" class="status-line">
+            No books in this category yet.
+        </p>
 
-            <div class="row">
-                <RouterLink
-                    v-for="book in section.books"
-                    :key="book.id"
-                    :to="{ name: 'bookDetails', params: { id: book.id } }"
-                    class="card"
-                >
-                    <img
-                        v-if="book.coverId"
-                        :src="coverUrl(book.coverId)"
-                        :alt="book.title"
-                    />
-                    <div v-else class="cover-placeholder">No cover</div>
+        <div v-else class="grid">
+            <RouterLink
+                v-for="book in activeBooks"
+                :key="book.id"
+                :to="{ name: 'bookDetails', params: { id: book.id } }"
+                class="card"
+            >
+                <img
+                    v-if="book.coverId"
+                    :src="coverUrl(book.coverId)"
+                    :alt="book.title"
+                />
+                <div v-else class="cover-placeholder">No cover</div>
 
-                    <h3>{{ book.title }}</h3>
-                </RouterLink>
-            </div>
-        </section>
+                <h3>{{ book.title }}</h3>
+                <p class="author">{{ book.author }}</p>
+            </RouterLink>
+        </div>
     </template>
 </template>
 
@@ -94,13 +116,23 @@ export default {
                 { label: 'Romance', slug: 'romance', books: [] }
             ],
 
-            // Search state
+            activeCategory: 'classics',
+
             searchQuery: '',
             lastSearchedQuery: '',
             searchResults: [],
             searching: false,
             searchError: null,
             debounceTimer: null
+        }
+    },
+
+    computed: {
+        activeBooks() {
+            const section = this.sections.find(
+                (s) => s.slug === this.activeCategory
+            )
+            return section ? section.books : []
         }
     },
 
@@ -132,7 +164,6 @@ export default {
     },
 
     beforeUnmount() {
-        // Don't fire a search after the user leaves the page
         clearTimeout(this.debounceTimer)
     },
 
@@ -141,19 +172,22 @@ export default {
             return `https://covers.openlibrary.org/b/id/${id}-M.jpg`
         },
 
+        selectCategory(slug) {
+            this.clearSearch()
+            this.activeCategory = slug
+        },
+
         onSearchInput() {
             clearTimeout(this.debounceTimer)
 
             const q = this.searchQuery.trim()
             if (!q) {
-                // Reset search state so browse mode returns instantly
                 this.searchResults = []
                 this.searchError = null
                 this.lastSearchedQuery = ''
                 return
             }
 
-            // Debounce: wait 350ms after the user stops typing
             this.debounceTimer = setTimeout(() => this.runSearch(q), 350)
         },
 
@@ -171,7 +205,6 @@ export default {
 
                 const data = await res.json()
 
-                // Guard against a stale response overwriting newer results
                 if (query !== this.searchQuery.trim()) return
 
                 this.lastSearchedQuery = query
@@ -201,18 +234,121 @@ export default {
 </script>
 
 <style scoped>
-.row {
+/* --- Toolbar: search bar + tabs on one row, full-width divider below --- */
+
+.toolbar {
+    --control-height: 44px;
     display: flex;
-    gap: 1.25rem;
-    overflow-x: auto;
-    padding: 0.15rem 0.15rem 1.25rem;
-    scrollbar-color: var(--color-border-strong) transparent;
-    scrollbar-width: thin;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 1rem 0 1.75rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* --- Search bar --- */
+
+.search-bar {
+    position: relative;
+    flex: 0 1 300px;
+    min-width: 200px;
+    height: var(--control-height);
+}
+
+.search-bar input {
+    width: 100%;
+    height: 100%;
+    padding: 0 2.5rem 0 1rem;
+    font-size: 0.95rem;
+    font-family: var(--font-ui);
+    color: var(--color-text);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-strong);
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 180ms ease;
+}
+
+.search-bar input:focus {
+    border-color: var(--color-accent);
+}
+
+.search-bar input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.search-bar input::-webkit-search-cancel-button {
+    display: none;
+}
+
+.clear-btn {
+    position: absolute;
+    right: 0.4rem;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0.25rem 0.55rem;
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: color 180ms ease;
+}
+
+.clear-btn:hover {
+    color: var(--color-accent);
+}
+
+/* --- Category tabs (match input height + radius) --- */
+
+.category-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    flex: 1 1 auto;
+}
+
+.category-tab {
+    height: var(--control-height);
+    padding: 0 1rem;
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-ui);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 180ms ease, border-color 180ms ease,
+        background 180ms ease;
+}
+
+.category-tab:hover {
+    color: var(--color-text);
+    border-color: var(--color-accent);
+}
+
+.category-tab.active {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    background: var(--color-surface-raised);
+}
+
+/* --- Book grid (vertical scroll) --- */
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    gap: 1.5rem 1.25rem;
+    padding: 0.15rem 0.15rem 2rem;
 }
 
 .card {
-    flex: 0 0 148px;
-    min-width: 148px;
     text-decoration: none;
     color: var(--color-text);
     text-align: left;
@@ -270,58 +406,6 @@ export default {
     font-size: 0.8rem;
     color: var(--color-text-muted);
     line-height: 1.35;
-}
-
-/* --- Search bar --- */
-
-.search-bar {
-    position: relative;
-    max-width: 480px;
-    margin: 1rem 0 1.75rem;
-}
-
-.search-bar input {
-    width: 100%;
-    padding: 0.7rem 2.5rem 0.7rem 1rem;
-    font-size: 1rem;
-    font-family: var(--font-ui);
-    color: var(--color-text);
-    background: var(--color-surface-raised);
-    border: 1px solid var(--color-border-strong);
-    border-radius: 6px;
-    outline: none;
-    transition: border-color 180ms ease;
-}
-
-.search-bar input:focus {
-    border-color: var(--color-accent);
-}
-
-.search-bar input::placeholder {
-    color: var(--color-text-muted);
-}
-
-/* Hide the browser's native clear button on <input type="search"> */
-.search-bar input::-webkit-search-cancel-button {
-    display: none;
-}
-
-.clear-btn {
-    position: absolute;
-    right: 0.4rem;
-    top: 50%;
-    transform: translateY(-50%);
-    padding: 0.25rem 0.55rem;
-    background: none;
-    border: none;
-    color: var(--color-text-muted);
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: color 180ms ease;
-}
-
-.clear-btn:hover {
-    color: var(--color-accent);
 }
 
 .status-line {
