@@ -1,61 +1,83 @@
 // src/stores/bookshelf.js
 import { defineStore } from 'pinia'
 
+export const STATUS = {
+  TBR: 'tbr',
+  READING: 'reading',
+  FINISHED: 'finished'
+}
+
+export const STATUS_OPTIONS = [
+  { value: STATUS.TBR, label: 'To Be Read' },
+  { value: STATUS.READING, label: 'Reading' },
+  { value: STATUS.FINISHED, label: 'Finished' }
+]
+
+// Load + migrate: older saves have no `status`, so default them to TBR.
+function loadFromStorage() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('bookshelf')) || []
+    return raw.map(b => ({ status: STATUS.TBR, ...b }))
+  } catch {
+    return []
+  }
+}
+
 export const useBookshelfStore = defineStore('bookshelf', {
   state: () => ({
-    // Load initial state from localStorage if it exists
-    books: JSON.parse(localStorage.getItem('bookshelf')) || []
+    books: loadFromStorage()
   }),
 
   getters: {
-    // Check if a book is already on the bookshelf by its Open Library key
-    isOnBookshelf: (state) => (bookKey) => {
-      return state.books.some(book => book.key === bookKey)
-    },
+    isOnBookshelf: (state) => (bookKey) =>
+      state.books.some(b => b.key === bookKey),
 
-    // Get the total number of books
-    totalBooks: (state) => state.books.length,
+    getBook: (state) => (bookKey) =>
+      state.books.find(b => b.key === bookKey),
 
-    // Get all books sorted alphabetically by title
-    sortedBooks: (state) => {
-      return [...state.books].sort((a, b) => 
-        (a.title || '').localeCompare(b.title || '')
-      )
-    }
+    getStatus: (state) => (bookKey) =>
+      state.books.find(b => b.key === bookKey)?.status ?? null,
+
+    byStatus: (state) => (status) =>
+      state.books.filter(b => b.status === status),
+
+    counts: (state) => ({
+      tbr: state.books.filter(b => b.status === STATUS.TBR).length,
+      reading: state.books.filter(b => b.status === STATUS.READING).length,
+      finished: state.books.filter(b => b.status === STATUS.FINISHED).length,
+      total: state.books.length
+    })
   },
 
   actions: {
-    // Add a book to the bookshelf
-    addBook(book) {
-      // Prevent duplicates by checking the unique Open Library key
-      if (!this.isOnBookshelf(book.key)) {
-        this.books.push(book)
-        this.saveToLocalStorage()
-      }
-    },
-
-    // Remove a book from the bookshelf
-    removeBook(bookKey) {
-      this.books = this.books.filter(book => book.key !== bookKey)
+    addBook(book, status = STATUS.TBR) {
+      if (this.isOnBookshelf(book.key)) return
+      this.books.push({ ...book, status })
       this.saveToLocalStorage()
     },
 
-    // Toggle add/remove for convenience
-    toggleBook(book) {
-      if (this.isOnBookshelf(book.key)) {
-        this.removeBook(book.key)
-      } else {
-        this.addBook(book)
-      }
+    removeBook(bookKey) {
+      this.books = this.books.filter(b => b.key !== bookKey)
+      this.saveToLocalStorage()
     },
 
-    // Clear the entire bookshelf
+    setStatus(bookKey, status) {
+      const book = this.books.find(b => b.key === bookKey)
+      if (!book) return
+      book.status = status
+      this.saveToLocalStorage()
+    },
+
+    toggleBook(book, status = STATUS.TBR) {
+      if (this.isOnBookshelf(book.key)) this.removeBook(book.key)
+      else this.addBook(book, status)
+    },
+
     clearBookshelf() {
       this.books = []
       this.saveToLocalStorage()
     },
 
-    // Persist current state to localStorage
     saveToLocalStorage() {
       localStorage.setItem('bookshelf', JSON.stringify(this.books))
     }

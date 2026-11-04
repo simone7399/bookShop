@@ -16,14 +16,31 @@
 
         <p><strong>Author:</strong> {{ author || 'Unknown' }}</p>
 
+        <!-- Not on shelf: add button -->
         <button
-            class="bookshelf-btn"
-            :class="isOnBookshelf ? 'remove' : 'add'"
+            v-if="!isOnBookshelf"
+            class="bookshelf-btn add"
             :disabled="loading"
-            @click="toggleBookshelf"
+            @click="addToBookshelf"
         >
-            {{ isOnBookshelf ? '✓ Remove from Bookshelf' : '+ Add to Bookshelf' }}
+            + Add to Bookshelf
         </button>
+
+        <!-- On shelf: status selector + remove -->
+        <div v-else class="bookshelf-controls">
+            <label>
+                Status:
+                <select :value="currentStatus" @change="changeStatus">
+                    <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
+                        {{ opt.label }}
+                    </option>
+                </select>
+            </label>
+
+            <button class="bookshelf-btn remove" @click="removeFromBookshelf">
+                ✕ Remove
+            </button>
+        </div>
 
         <h3>About this book</h3>
         <p>{{ formatDescription(book.description) || 'No description available.' }}</p>
@@ -36,7 +53,7 @@
 </template>
 
 <script>
-import { useBookshelfStore } from '@/stores/bookshelf'
+import { useBookshelfStore, STATUS_OPTIONS } from '@/stores/bookshelf'
 
 export default {
     props: ['id'],
@@ -46,12 +63,12 @@ export default {
             book: null,
             author: '',
             loading: true,
-            error: null
+            error: null,
+            statusOptions: STATUS_OPTIONS
         }
     },
 
     computed: {
-        // Access the store via a computed so it stays reactive in Options API
         bookshelf() {
             return useBookshelfStore()
         },
@@ -60,9 +77,12 @@ export default {
             return this.book?.covers?.[0] || null
         },
 
-        // Is the current book already saved?
         isOnBookshelf() {
             return this.book ? this.bookshelf.isOnBookshelf(this.book.key) : false
+        },
+
+        currentStatus() {
+            return this.book ? this.bookshelf.getStatus(this.book.key) : null
         }
     },
 
@@ -95,19 +115,27 @@ export default {
             return typeof desc === 'string' ? desc : desc.value || ''
         },
 
-        toggleBookshelf() {
-            if (!this.book) return
-
-            // Open Library's "work" object has a different shape than what
-            // the bookshelf page expects, so we normalise it here.
-            const bookToSave = {
+        // Normalise the work object into the shape the bookshelf expects
+        bookPayload() {
+            return {
                 key: this.book.key,
                 title: this.book.title,
                 cover_i: this.coverId,
                 author_name: this.author ? [this.author] : []
             }
+        },
 
-            this.bookshelf.toggleBook(bookToSave)
+        addToBookshelf() {
+            if (!this.book) return
+            this.bookshelf.addBook(this.bookPayload()) // defaults to TBR
+        },
+
+        changeStatus(event) {
+            this.bookshelf.setStatus(this.book.key, event.target.value)
+        },
+
+        removeFromBookshelf() {
+            this.bookshelf.removeBook(this.book.key)
         }
     }
 }
@@ -116,7 +144,6 @@ export default {
 <style scoped>
 .bookshelf-btn {
     display: inline-block;
-    margin: 1rem 0;
     padding: 0.6rem 1.2rem;
     font-size: 1rem;
     font-weight: 600;
@@ -129,6 +156,7 @@ export default {
 .bookshelf-btn.add {
     background: #2563eb;
     color: #fff;
+    margin: 1rem 0;
 }
 
 .bookshelf-btn.add:hover {
@@ -148,6 +176,18 @@ export default {
 .bookshelf-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.bookshelf-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.bookshelf-controls select {
+    padding: 0.4rem 0.6rem;
+    font-size: 1rem;
 }
 
 .nav-links {
